@@ -1,0 +1,5 @@
+# Adds the host half. DSH discovers and serves ./client from package.json's
+# dsh.client declaration, so there is deliberately no second client row.
+- insert:
+    - id: git-workspace
+      name: dsh-git-workspace

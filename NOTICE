@@ -1,0 +1,15 @@
+dsh-git-workspace
+Copyright 2026 dsh-git-workspace contributors
+
+This product includes implementation patterns derived from the following
+open-source projects:
+
+- zhu1090093659/dsh-web, especially the task-board sidebar and center-surface
+  host-adapter approach, licensed under the Apache License 2.0.
+- luoyu-xingu/dsh-multi-root, for standalone DSH dual-face plugin packaging
+  and canonical-path boundary patterns, licensed under the MIT License.
+- mojiexuan/dsh-git, for DSH Git plugin integration references, licensed under
+  the MIT License.
+
+No original project endorsement is implied. Their copyright notices and
+licenses remain with their respective authors.

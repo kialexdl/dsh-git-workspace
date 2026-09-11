@@ -1,0 +1,116 @@
+{
+  "name": "dsh-git-workspace",
+  "version": "0.2.1",
+  "description": "Workspace-scoped multi-repository Git workbench for DeepSeek Harness, with safe staging, history, batch network operations, and per-remote proxy policy.",
+  "type": "module",
+  "packageManager": "pnpm@11.21.0",
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "types": "./lib/types/client/index.d.ts",
+      "default": "./lib/client.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "engines": {
+      "dsh": ">=0.1.5-rc.1 <0.2.0"
+    },
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-connection",
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-client-ui-renderer",
+        "@deepseek-ai/dsh-client-ui-layout",
+        "@deepseek-ai/dsh-client-ui-sidebar",
+        "@deepseek-ai/dsh-client-ui-settings-plugins"
+      ],
+      "platform": "web",
+      "external": [
+        "react",
+        "react/jsx-runtime"
+      ]
+    }
+  },
+  "scripts": {
+    "build": "pnpm clean && tsc -b && node build.mjs",
+    "clean": "node scripts/clean.mjs",
+    "typecheck": "tsc -b --pretty false && tsc -p tsconfig.test.json --noEmit",
+    "test": "vitest run",
+    "check": "pnpm typecheck && pnpm test && pnpm build",
+    "pack:source": "node scripts/pack-source.mjs"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.2",
+    "@deepseek-ai/dsh-client-connection": ">=0.1.5-rc.1 <0.2.0",
+    "@deepseek-ai/dsh-client-locale": ">=0.1.5-rc.1 <0.2.0",
+    "@deepseek-ai/dsh-client-ui-settings": ">=0.1.5-rc.1 <0.2.0",
+    "@deepseek-ai/dsh-client-ui-slots": ">=0.1.5-rc.1 <0.2.0",
+    "@deepseek-ai/dsh-settings": ">=0.1.5-rc.1 <0.2.0",
+    "@deepseek-ai/dsh-workspace": ">=0.1.5-rc.1 <0.2.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "@deepseek-ai/dsh-client-ui-renderer": ">=0.1.5-rc.1 <0.2.0",
+    "@deepseek-ai/dsh-client-ui-layout": ">=0.1.5-rc.1 <0.2.0",
+    "@deepseek-ai/dsh-client-ui-sidebar": ">=0.1.5-rc.1 <0.2.0",
+    "@deepseek-ai/dsh-client-ui-settings-plugins": ">=0.1.5-rc.1 <0.2.0"
+  },
+  "dependencies": {
+    "@deepseek-ai/schemastery": "^3.18.2"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "4.0.2",
+    "@deepseek-ai/dsh-client-connection": "0.1.5-rc.1",
+    "@deepseek-ai/dsh-client-locale": "0.1.5-rc.1",
+    "@deepseek-ai/dsh-client-ui-settings": "0.1.5-rc.1",
+    "@deepseek-ai/dsh-client-ui-slots": "0.1.5-rc.1",
+    "@deepseek-ai/dsh-settings": "0.1.5-rc.1",
+    "@deepseek-ai/dsh-workspace": "0.1.5-rc.1",
+    "@types/node": "^22.20.0",
+    "@types/react": "~18.3.1",
+    "@types/react-dom": "^18.3.5",
+    "esbuild": "^0.25.0",
+    "jsdom": "^25.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "typescript": "~5.7.3",
+    "vitest": "^3.0.0",
+    "@deepseek-ai/dsh-client-ui-renderer": "0.1.5-rc.1",
+    "@deepseek-ai/dsh-client-ui-layout": "0.1.5-rc.1",
+    "@deepseek-ai/dsh-client-ui-sidebar": "0.1.5-rc.1",
+    "@deepseek-ai/dsh-client-ui-settings-plugins": "0.1.5-rc.1"
+  },
+  "files": [
+    "lib/**/*.js",
+    "lib/**/*.js.map",
+    "lib/**/*.d.ts",
+    "lib/**/*.d.ts.map",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE",
+    "NOTICE",
+    "CHANGELOG.md",
+    "docs"
+  ],
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "git",
+    "multi-repository",
+    "workspace",
+    "proxy"
+  ],
+  "license": "Apache-2.0"
+}
