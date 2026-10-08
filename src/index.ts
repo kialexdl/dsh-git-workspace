@@ -23,7 +23,24 @@ export interface Config {
   defaultAction: Volatile<NonNullable<NetworkSettings['defaultAction']>>
 }
 
-export const Config = z.object({
+/** Plain values declared in the schema (distinct from the Loader's Volatile runtime handles). */
+export interface ConfigValues {
+  enabled: boolean
+  scanDepth: number
+  ignoredDirectories: string[]
+  proxyUrl?: string
+  proxyHosts: string[]
+  directHosts: string[]
+  blockHosts: string[]
+  defaultAction: NonNullable<NetworkSettings['defaultAction']>
+}
+
+/**
+ * Explicit portable schema type: the schema accepts plain values and its
+ * metadata defaults are plain values; Loader wraps each field as Volatile
+ * only when constructing the runtime Config passed to apply().
+ */
+export const Config: z<Partial<ConfigValues>, ConfigValues> = z.object({
   enabled: z.boolean().default(true).volatile(),
   scanDepth: z.number().min(0).max(12).default(4).volatile(),
   ignoredDirectories: z.array(z.string()).default([]).volatile(),
