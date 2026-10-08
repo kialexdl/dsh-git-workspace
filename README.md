@@ -4,7 +4,7 @@
 
 一个 DSH workspace 下可以同时发现和维护多个彼此独立的 Git 仓库，并在同一界面完成状态查看、暂存、提交、历史查看、分支与 Remote 维护、Fetch、Pull、Push 和批量网络操作。Remote 可按实际目标主机选择代理、直连、继承 Host 环境或阻止访问。
 
-> DSH 0.2.1-alpha.1 兼容性适配分支（插件源码版本 0.3.0）。升级前必须核对旧设置数据；详情见 [0.2.1 迁移说明](docs/DSH-0.2.1-ADAPTATION.md)。
+> 支持 DSH `>=0.2.0-rc.2 <0.3.0-0`（插件源码版本 0.3.1）。升级前必须核对旧设置数据；详情见 [0.2.1 迁移说明](docs/DSH-0.2.1-ADAPTATION.md)。
 
 > 兼容性完整复查见 [DSH 0.2.1 兼容性审计](docs/DSH-0.2.1-COMPAT-AUDIT.md)，包含已核对接口、已修复的测试和仍需运行的验收项目。
 
@@ -16,8 +16,8 @@ DSH 0.2.1 的 `Config` 字段使用 `.volatile()`，必须搭配支持该接口�
 
 ```powershell
 git fetch origin
-git switch compat/dsh-0.2.1-alpha.1
-git pull --ff-only origin compat/dsh-0.2.1-alpha.1
+git switch main
+git pull --ff-only origin main
 pnpm install --no-frozen-lockfile
 node -e "import('@deepseek-ai/schemastery').then(({default:z}) => console.log('volatile:', typeof z.boolean().default(true).volatile))"
 pnpm check
@@ -27,10 +27,12 @@ pnpm check
 
 ## 当前兼容基线
 
-- 宿主版本：DSH `>=0.2.1-alpha.1 <0.3.0`（静态接口基线：`5badb15`）。
+- 宿主版本：DSH `>=0.2.0-rc.2 <0.3.0-0`（最低版本接口核对：`639ed01`；开发依赖基线：`5badb15`）。
 - 网络设置入口：插件管理 → `dsh-git-workspace` 详情页；新版设置编辑绑定 `git-workspace` profile 条目。
 - 旧版 `ctx.settings.register` / `settings.plugin.item` 已移除；网络设置使用 `volatile` 配置与 `plugins.bundle.config`。
-- 本分支尚未完成实际 DSH 宿主集成测试，不能视为已验收的稳定发布。
+- 用户已验证此前 0.3.0 在 DSH 0.2.1-alpha.1 正常生效；新增的 0.2.0-rc.2 支持已通过该版本依赖下的类型检查、构建与 37 项关键接口测试，完整宿主验收仍待执行。
+- 宿主强制校验所有 `@deepseek-ai/dsh-*` 的 `peerDependencies`（宿主依赖声明）；顶层 `engines.dsh`（宿主版本声明）与之保持一致。`<0.3.0-0` 排除 0.3.0 的预发布版。
+- Cordis 运行范围为 `>=4.0.4 <5.0.0`；开发依赖继续固定在 0.2.1-alpha.1 配套版本，Schemastery 继续固定为 3.18.5-alpha.1。
 
 
 ## 能力
@@ -54,7 +56,7 @@ pnpm check
 
 ## 环境要求
 
-- DSH `>=0.2.1-alpha.1 <0.3.0`；本分支适配的官方源代码提交为 `5badb15`。
+- DSH `>=0.2.0-rc.2 <0.3.0-0`；本分支适配的官方源代码提交为 `5badb15`。
 - Node.js `^22.19.0` 或 `>=24`；pnpm `11.7.0`。
 - Git 命令行；建议 Git `>=2.31`（代理策略依赖 `git --config-env`）。
 - `@deepseek-ai/schemastery` 精确版本 `3.18.5-alpha.1`，不要恢复旧版 `pnpm-lock.yaml`。

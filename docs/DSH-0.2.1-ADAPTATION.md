@@ -4,7 +4,7 @@
 
 ## 主要改动
 
-- 插件最低运行版本调整为 `>=0.2.1-alpha.1 <0.3.0`，对应 Cordis 更新到 4.0.5-alpha.1。
+- 0.3.1 起插件运行范围为 `>=0.2.0-rc.2 <0.3.0-0`，Cordis 下限为 4.0.4。开发依赖仍以 DSH 0.2.1-alpha.1 / Cordis 4.0.5-alpha.1 为基线。
 - 移除已废止的 `ctx.settings.register`，由 Loader 的 `Config` 和 `.volatile()` 负责即时配置。每次操作通过 `.get()` 读取最新值。
 - 客户端从 `ctx.settingsScope` 改为 `ctx.configForms.get('git-workspace')`。此处必须使用 profile 插件条目 id，而非 npm 包名。
 - 网络配置卡片从旧 `settings.plugin.item` 迁移至 `plugins.bundle.config`，key 为 npm 包名 `dsh-git-workspace`。
@@ -48,4 +48,4 @@ dsh plugin --profile web add ./
 6. 测试 Fetch / Pull / Push，以及批量 Fetch/Pull 进度与错误隔离。
 7. 复核旧用户 profile 配置和跨版本卸载/重装。
 
-本分支尚未在实际 0.2.1-alpha.1 宿主上完成端到端验证；不可把静态检查当作运行通过。
+用户已验证此前 0.3.0 在实际 0.2.1-alpha.1 宿主正常生效。本次新增 0.2.0-rc.2 的运行声明：通信、配置表单、工作区关键接口已与官方标签 `dsh-v0.2.0-rc.2`（`639ed01`）对照，但尚未完成该版本完整宿主端到端验收。
