@@ -23,7 +23,7 @@ export interface Config {
   defaultAction: Volatile<NonNullable<NetworkSettings['defaultAction']>>
 }
 
-export const Config: z<Config> = z.object({
+export const Config = z.object({
   enabled: z.boolean().default(true).volatile(),
   scanDepth: z.number().min(0).max(12).default(4).volatile(),
   ignoredDirectories: z.array(z.string()).default([]).volatile(),
@@ -80,11 +80,11 @@ export function configValue(config: Config): Required<Pick<NetworkSettings, 'pro
   return {
     enabled: config.enabled.get(),
     scanDepth: config.scanDepth.get(),
-    ignoredDirectories: config.ignoredDirectories.get(),
+    ignoredDirectories: [...config.ignoredDirectories.get()],
     proxyUrl: config.proxyUrl.get(),
-    proxyHosts: config.proxyHosts.get(),
-    directHosts: config.directHosts.get(),
-    blockHosts: config.blockHosts.get(),
+    proxyHosts: [...config.proxyHosts.get()],
+    directHosts: [...config.directHosts.get()],
+    blockHosts: [...config.blockHosts.get()],
     defaultAction: config.defaultAction.get(),
   }
 }
