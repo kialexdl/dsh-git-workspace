@@ -127,7 +127,7 @@ WORKSPACE
 
 ## 11. 代理设置
 
-在 DSH Settings 的插件配置页打开“Git 工作台网络”。建议从最小配置开始：
+在 DSH 左侧 Plugins（插件管理）中打开 `dsh-git-workspace` 详情页的“Git 工作台网络”。仅本机页面可持久修改配置；建议从最小配置开始：
 
 ```text
 代理地址：http://127.0.0.1:7890
@@ -149,7 +149,7 @@ WORKSPACE
 
 ### 启动时报 `/api already has an interceptor`
 
-这是 `0.1.0` 的通信层缺陷：该版本错误地尝试拦截 DSH API Gateway 已占用的共享 `/api` channel。DSH 0.1.5-rc.1 请升级到插件 `0.2.0` 并重新执行 `pnpm build`；该版本使用 `/api/git-workspace/<endpoint>` 精确路由，不需要修改 DSH profile 或关闭其他插件。
+这是旧版通信层缺陷：早期版本错误地尝试拦截 DSH API Gateway 已占用的共享 `/api` 通道。DSH 0.2.1 请使用插件 0.3.0 适配分支并重新执行 `pnpm install --no-frozen-lockfile`、`pnpm check`；新版继续使用 `/api/git-workspace/<endpoint>` 精确路由。
 
 ### 未发现仓库
 
