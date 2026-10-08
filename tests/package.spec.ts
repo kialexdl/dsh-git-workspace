@@ -53,7 +53,7 @@ describe('distributable plugin package', () => {
     expect(host).not.toMatch(/ctx\\.settings\\.register\\(/)
     expect(host).toContain('.volatile()')
     expect(host).toContain('config.proxyUrl.get()')
-    expect(client).toContain("ctx.configForms.get(PANEL_ID)")
+    expect(client).toContain("ctx.configForms.get(SETTINGS_ENTRY_ID)")
     expect(client).toContain("'plugins.bundle.config'")
     expect(client).not.toContain("'settings.plugin.item'")
     expect(card).toContain('controller.scope.mutate(ops, snapshot.revision)')
