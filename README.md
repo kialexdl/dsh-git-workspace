@@ -1,5 +1,9 @@
 # dsh-git-workspace
 
+面向 DeepSeek Harness（DSH）Web UI 的单 workspace 多 Git 仓库工作台。
+
+一个 DSH workspace 下可以同时发现和维护多个彼此独立的 Git 仓库，并在同一界面完成状态查看、暂存、提交、历史查看、分支与 Remote 维护、Fetch、Pull、Push 和批量网络操作。Remote 可按实际目标主机选择代理、直连、继承 Host 环境或阻止访问。
+
 > DSH 0.2.1-alpha.1 兼容性适配分支（插件源码版本 0.3.0）。升级前必须核对旧设置数据；详情见 [0.2.1 迁移说明](docs/DSH-0.2.1-ADAPTATION.md)。
 
 > 兼容性完整复查见 [DSH 0.2.1 兼容性审计](docs/DSH-0.2.1-COMPAT-AUDIT.md)，包含已核对接口、已修复的测试和仍需运行的验收项目。
@@ -29,14 +33,6 @@ pnpm check
 - 本分支尚未完成实际 DSH 宿主集成测试，不能视为已验收的稳定发布。
 
 
-面向 DeepSeek Harness（DSH）Web UI 的单 workspace 多 Git 仓库工作台。
-
-一个 DSH workspace 下可以同时发现和维护多个彼此独立的 Git 仓库，并在同一界面完成状态查看、暂存、提交、历史查看、分支与 Remote 维护、Fetch、Pull、Push 和批量网络操作。Remote 可按实际目标主机选择代理、直连、继承 Host 环境或阻止访问。
-
-## 历史版本 0.2.1 修复
-
-修复 0.2.0 打开工作台时报 `connection: invalid RPC target`。RPC 使用 `/api` channel + `git-workspace/<endpoint>` method；请同时更新 Host 与 Client，重启 DSH 后按 Ctrl+F5 刷新浏览器。原本同目录 link 安装无需重新注册。
-
 ## 能力
 
 - 在当前 DSH workspace 内有限深度扫描多个独立 Git 仓库。
@@ -52,50 +48,40 @@ pnpm check
 - 批量 Fetch/Pull 最多 4 个仓库并行，Push 顺序执行；弹窗内实时显示等待、执行中、成功、失败和阻止状态，并可仅重试失败项。
 - 仓库批量范围支持全选、反选和逐项选择。
 - 仓库栏、主操作区和 Diff/提交详情栏之间可拖拽调整宽度；详情栏未使用时不占空间。
-- DSH Settings 内的简化代理配置：走代理、强制直连、禁止访问三组主机列表。
+- DSH 插件管理（旧版称 DSH Settings）内的简化代理配置：走代理、强制直连、禁止访问三组主机列表。
 - Fetch URL 与 Push URL 分别决策；代理失败不会静默回退直连。
 - Windows、macOS 和 Linux 的 Node.js 原生子进程调用，不经 shell 拼接用户输入。
 
-## 旧版环境要求（历史记录，当前请参照上方兼容基线）
+## 环境要求
 
-- DSH `0.1.5-rc.1`（本次验证版本，2026-09-10，commit `183f08e9c6dde7e36cd2318eaee70b0da08fb35e`）；最低接口要求 `>=0.1.5-rc.1 <0.2.0`。旧 DSH 请继续使用插件 0.1.4。
-- Node.js `^22.19.0` 或 `>= 24`
-- pnpm（仓库声明 `pnpm@11.21.0`）
-- Git CLI；建议 Git `>= 2.31`，代理注入依赖 `git --config-env`
+- DSH `>=0.2.1-alpha.1 <0.3.0`；本分支适配的官方源代码提交为 `5badb15`。
+- Node.js `^22.19.0` 或 `>=24`；pnpm `11.7.0`。
+- Git 命令行；建议 Git `>=2.31`（代理策略依赖 `git --config-env`）。
+- `@deepseek-ai/schemastery` 精确版本 `3.18.5-alpha.1`，不要恢复旧版 `pnpm-lock.yaml`。
 
-## 历史版本升级到 0.2.1
+## 安装和本地验证
 
-本版本迁移到 DSH 新插件接口，不兼容 0.1.1 系列宿主。先升级 DSH 至 `0.1.5-rc.1`，然后停止 DSH、将 0.2.1 源码覆盖到原插件目录并执行：
+在本仓库目录中执行：
 
 ```powershell
-pnpm install
-pnpm build
-```
-
-若原来使用本地 link 安装且目录没有变化，重启 DSH 并刷新浏览器即可。若使用安装包或改变目录，重新执行 `dsh plugin --profile web add <插件目录或tgz路径>`。升级保留 `dsh-git-workspace` 包名、插件 ID和 settings namespace，不需要重建工作区或修改已有代理规则。
-
-详细变更分析与验证记录见 [docs/DSH-0.1.5-ADAPTATION.md](docs/DSH-0.1.5-ADAPTATION.md)。
-
-## 安装
-
-在本仓库根目录执行：
-
-```bash
-pnpm install
-pnpm build
+pnpm install --no-frozen-lockfile
+pnpm check
+node scripts/smoke-built.mjs
 dsh plugin --profile web add ./
 ```
 
-不需要复制构建产物、不需要手工修改 DSH profile，也不需要写全局 Git 配置。`cordis.patch.yml` 和 `dsh.client` 清单已经随包提供。
+`pnpm check` 依次执行类型检查、单元与集成测试、打包；`smoke-built.mjs` 则直接导入构建后的宿主模块并验证前端模块注册格式。
 
-> DSH 官方 CLI（已核对 `0.1.5-rc.1`）把 `--profile` 定义为 `plugin` 子命令的必填参数，因此官方发行版会拒绝字面命令 `dsh plugin add ./`。插件包在被安装前无法改变 CLI 的参数解析。若你的 DSH 发行版或本地 wrapper 已把默认 profile 固定为 `web`，可使用该简写；官方 CLI 的零额外配置命令是上面的 `dsh plugin --profile web add ./`。
-
-构建后应出现：
+构建后包含：
 
 ```text
-lib/index.js   # DSH Host 插件
-lib/client.js  # DSH Web 客户端插件
+lib/index.js   # DSH Host 插件入口
+lib/client.js  # DSH Web 客户端入口
 ```
+
+安装到隔离测试配置（例如 `test`）时可将 `web` 替换为 `test`，具体以已创建的 profile 为准；直接运行 `dsh plugin add ./` 在需要 `--profile` 的发行版中会被拒绝。
+
+升级原源码目录时，先备份 profile 的配置文件。现有 Git 工作区不会被清空，但旧 `settings.yaml` 中的代理策略不能保证自动迁移。详细说明见 [升级迁移](docs/DSH-0.2.1-ADAPTATION.md)。
 
 ## 使用
 
@@ -117,7 +103,7 @@ lib/client.js  # DSH Web 客户端插件
 进入：
 
 ```text
-DSH Settings → 插件配置 → Git 工作台网络
+DSH 左侧 Plugins（插件管理）→ dsh-git-workspace → Git 工作台网络
 ```
 
 配置项：
