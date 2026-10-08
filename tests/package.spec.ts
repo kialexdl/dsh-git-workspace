@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises'
+import z from '@deepseek-ai/schemastery'
 import { describe, expect, it } from 'vitest'
 
 async function text(path: string): Promise<string> {
@@ -27,6 +28,15 @@ describe('distributable plugin package', () => {
     expect(await text('docs/DESIGN.md')).toContain('## 12. UCD 验收场景')
     expect(await text('docs/USAGE.md')).toContain('## 11. 代理设置')
     expect(await text('docs/SECURITY.md')).toContain('## 信任边界')
+  })
+
+  it('uses a Schemastery runtime with volatile configuration references', async () => {
+    const pkg = JSON.parse(await text('package.json')) as Record<string, any>
+    expect(pkg.dependencies['@deepseek-ai/schemastery']).toBe('3.18.5-alpha.1')
+    const schema = z.object({ enabled: z.boolean().default(true).volatile() })
+    expect(schema({}).enabled.get()).toBe(true)
+    const buildScript = await text('build.mjs')
+    expect(buildScript).toContain("schema.boolean().default(true).volatile")
   })
 
   it('selects JavaScript rather than the source map for the client wrapper', async () => {
