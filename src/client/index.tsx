@@ -13,6 +13,7 @@ import { injectStyles } from './styles.ts'
 export const name = 'git-workspace-client'
 export const inject = ['slots', 'connection', 'configForms', 'layout']
 export const PANEL_ID = 'dsh-git-workspace'
+export const SETTINGS_ENTRY_ID = 'git-workspace'
 
 export function apply(ctx: Context): void {
   const connection = ctx.get('connection') as ConnectionHandle | undefined
@@ -31,8 +32,8 @@ export function apply(ctx: Context): void {
     label: 'Git 工作台',
   }, GitWorkspaceIcon))
 
-  const settings = new NetworkSettingsController(ctx.configForms.get(PANEL_ID))
-  ctx.effect(() => ctx.configForms.whileServed([PANEL_ID], () => ctx.slots.inject('plugins.bundle.config', () => ctx.slots.register({
+  const settings = new NetworkSettingsController(ctx.configForms.get(SETTINGS_ENTRY_ID))
+  ctx.effect(() => ctx.configForms.whileServed([SETTINGS_ENTRY_ID], () => ctx.slots.inject('plugins.bundle.config', () => ctx.slots.register({
     name: 'plugins.bundle.config',
     key: PANEL_ID,
     inject: () => ({ controller: settings }),
