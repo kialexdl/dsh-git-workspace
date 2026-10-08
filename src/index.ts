@@ -23,24 +23,12 @@ export interface Config {
   defaultAction: Volatile<NonNullable<NetworkSettings['defaultAction']>>
 }
 
-/** Plain values declared in the schema (distinct from the Loader's Volatile runtime handles). */
-export interface ConfigValues {
-  enabled: boolean
-  scanDepth: number
-  ignoredDirectories: string[]
-  proxyUrl?: string
-  proxyHosts: string[]
-  directHosts: string[]
-  blockHosts: string[]
-  defaultAction: NonNullable<NetworkSettings['defaultAction']>
-}
-
 /**
- * Explicit portable schema type: the schema accepts plain values and its
- * metadata defaults are plain values; Loader wraps each field as Volatile
- * only when constructing the runtime Config passed to apply().
+ * Give the exported schema a portable public type. Schemastery's `.volatile()`
+ * stores plain default metadata but DSH's Loader supplies Volatile<T> values
+ * to apply(); using z<Config> would conflate those two contracts.
  */
-export const Config: z<Partial<ConfigValues>, ConfigValues> = z.object({
+export const Config: z = z.object({
   enabled: z.boolean().default(true).volatile(),
   scanDepth: z.number().min(0).max(12).default(4).volatile(),
   ignoredDirectories: z.array(z.string()).default([]).volatile(),
