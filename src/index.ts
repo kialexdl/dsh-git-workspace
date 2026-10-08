@@ -9,7 +9,10 @@ import { RPC, type NetworkSettings } from './shared/protocol.ts'
 
 export const name = 'git-workspace'
 export const inject = ['connection', 'workspaceRegistry']
-export const SETTINGS_NAMESPACE = 'dsh-git-workspace'
+/** Settings forms in DSH 0.2.x are keyed by the profile entry id. */
+export const SETTINGS_NAMESPACE = 'git-workspace'
+/** Historical settings.yaml section key; migration is manual and documented. */
+export const LEGACY_SETTINGS_NAMESPACE = 'dsh-git-workspace'
 
 /** DSH 0.2.1 exposes editable fields through volatile plugin Config references. */
 export interface Config {
