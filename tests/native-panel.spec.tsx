@@ -26,7 +26,12 @@ it('registers native slots, opens with no sessions, and returns through DSH layo
     get: () => ({ rpc: { call } }),
     slots: {
       register: slots.register.bind(slots),
-      inject: (_key: string, register: () => () => void) => { disposers.push(register()) },
+      inject: (_key: string, register: () => () => void) => {
+        // The slot registry owns its lifetime; expose a disposer to the
+        // nested configForms.whileServed() registration as in the real DSH API.
+        disposers.push(register())
+        return () => {}
+      },
     },
     effect: (effect: () => () => void) => { disposers.push(effect()) },
     configForms: {
