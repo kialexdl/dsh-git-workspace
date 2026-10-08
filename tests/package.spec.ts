@@ -39,6 +39,16 @@ describe('distributable plugin package', () => {
     expect(buildScript).toContain("schema.boolean().default(true).volatile")
   })
 
+  it('does not retain pre-0.2.1 package release exclusions or the wrong profile settings identifier', async () => {
+    const allowlist = await text('pnpm-workspace.yaml')
+    const host = await text('src/index.ts')
+    const client = await text('src/client/index.tsx')
+    expect(allowlist).not.toContain('0.1.5-rc.1')
+    expect(allowlist).toContain('@deepseek-ai/schemastery@3.18.5-alpha.1')
+    expect(host).toContain("export const SETTINGS_NAMESPACE = 'git-workspace'")
+    expect(client).toContain("export const SETTINGS_ENTRY_ID = 'git-workspace'")
+  })
+
   it('selects JavaScript rather than the source map for the client wrapper', async () => {
     const build = await text('build.mjs')
     expect(build).toContain("file.path.endsWith('client.body.js')")
