@@ -32,6 +32,8 @@ jobs:
         run: node -e "import('@deepseek-ai/schemastery').then(({default:z}) => { if(typeof z.boolean().default(true).volatile !== 'function') process.exit(1) })"
       - name: Typecheck and tests
         run: pnpm check
+      - name: Smoke test distributable Host and Client bundles
+        run: node scripts/smoke-built.mjs
       - name: Archive source without dependencies
         run: pnpm pack:source
       - name: Publish source ZIP
