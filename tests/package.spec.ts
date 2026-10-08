@@ -43,6 +43,22 @@ describe('distributable plugin package', () => {
     expect(protocol).toContain("RPC_CHANNEL = '/api'")
   })
 
+  it('targets the DSH 0.2.1 configuration and UI contracts', async () => {
+    const pkg = JSON.parse(await text('package.json')) as Record<string, any>
+    const host = await text('src/index.ts')
+    const client = await text('src/client/index.tsx')
+    const card = await text('src/client/NetworkSettingsCard.tsx')
+    expect(pkg.dsh.engines.dsh).toContain('0.2.1-alpha.1')
+    expect(pkg.peerDependencies['@deepseek-ai/dsh-client-ui-plugin-manager']).toBeDefined()
+    expect(host).not.toMatch(/ctx\\.settings\\.register\\(/)
+    expect(host).toContain('.volatile()')
+    expect(host).toContain('config.proxyUrl.get()')
+    expect(client).toContain("ctx.configForms.get(PANEL_ID)")
+    expect(client).toContain("'plugins.bundle.config'")
+    expect(client).not.toContain("'settings.plugin.item'")
+    expect(card).toContain('controller.scope.mutate(ops, snapshot.revision)')
+  })
+
   it('keeps Remotes hints out of the compact URL grid', async () => {
     const styles = await text('src/client/styles.ts')
     expect(styles).toContain('.dgw-remotes .dgw-hint{display:block;width:100%')
