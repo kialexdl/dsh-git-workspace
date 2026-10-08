@@ -3,7 +3,7 @@
   "version": "0.3.0",
   "description": "Workspace-scoped multi-repository Git workbench for DeepSeek Harness, with safe staging, history, batch network operations, and per-remote proxy policy.",
   "type": "module",
-  "packageManager": "pnpm@11.21.0",
+  "packageManager": "pnpm@11.7.0",
   "engines": {
     "node": "^22.19.0 || >=24.0.0"
   },
@@ -53,7 +53,7 @@
     "pack:source": "node scripts/pack-source.mjs"
   },
   "peerDependencies": {
-    "@deepseek-ai/cordis": "^4.0.2",
+    "@deepseek-ai/cordis": ">=4.0.5-alpha.1 <5.0.0",
     "@deepseek-ai/dsh-client-connection": ">=0.2.1-alpha.1 <0.3.0",
     "@deepseek-ai/dsh-client-locale": ">=0.2.1-alpha.1 <0.3.0",
     "@deepseek-ai/dsh-client-ui-settings": ">=0.2.1-alpha.1 <0.3.0",
@@ -71,7 +71,7 @@
     "@deepseek-ai/schemastery": "^3.18.2"
   },
   "devDependencies": {
-    "@deepseek-ai/cordis": "4.0.2",
+    "@deepseek-ai/cordis": "4.0.5-alpha.1",
     "@deepseek-ai/dsh-client-connection": "0.2.1-alpha.1",
     "@deepseek-ai/dsh-client-locale": "0.2.1-alpha.1",
     "@deepseek-ai/dsh-client-ui-settings": "0.2.1-alpha.1",
