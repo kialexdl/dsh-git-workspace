@@ -53,6 +53,7 @@ describe('distributable plugin package', () => {
     expect(pkg.peerDependencies['@deepseek-ai/dsh-client-ui-plugin-manager']).toBeDefined()
     expect(host).not.toContain('const scope = ctx.settings.register(')
     expect(host).toContain('.volatile()')
+    expect(host).toContain('export const Config: z = z.object({')
     expect(host).toContain('config.proxyUrl.get()')
     expect(host).toContain('ignoredDirectories: [...config.ignoredDirectories.get()]')
     expect(client).toContain("ctx.configForms.get(SETTINGS_ENTRY_ID)")
