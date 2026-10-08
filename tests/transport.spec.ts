@@ -1,9 +1,19 @@
 import { describe, expect, it, vi } from 'vitest'
 import { GitWorkspaceApi } from '../src/client/api.ts'
-import { configValue, dispatch } from '../src/index.ts'
+import { Config, configValue, dispatch } from '../src/index.ts'
 import { RPC, RPC_CHANNEL, rpcMethod } from '../src/shared/protocol.ts'
 
 describe('Host/Client transport contract', () => {
+  it('resolves the exported DSH 0.2.1 volatile schema into a usable default runtime config', () => {
+    const resolved = Config({}) as import('../src/index.ts').Config
+    expect(resolved.enabled.get()).toBe(true)
+    expect(resolved.proxyUrl.get()).toBeUndefined()
+    expect(configValue(resolved)).toMatchObject({
+      enabled: true, scanDepth: 4, ignoredDirectories: [],
+      proxyHosts: [], directHosts: [], blockHosts: [], defaultAction: 'inherit',
+    })
+  })
+
   it('detaches readonly volatile arrays from plugin configuration snapshots', () => {
     const hosts = Object.freeze(['github.com'])
     const ignored = Object.freeze(['node_modules'])
