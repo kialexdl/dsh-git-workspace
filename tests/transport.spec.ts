@@ -57,25 +57,26 @@ describe('Host/Client transport contract', () => {
 
 // Exercise the real request parser against exact-route handlers, including the
 // URL/body method agreement that prevents an allowed route dispatching another action.
-describe('DSH 0.1.5 exact Fetch transport', () => {
+describe('DSH 0.2.1 exact Fetch transport', () => {
   async function mounted() {
     const { registerTransport } = await import('../src/host/transport.ts')
     const routes: import('@deepseek-ai/dsh-client-connection').ConnectionFetchRoute[] = []
     const handler = vi.fn().mockResolvedValue({ ok: true, value: ['workspace'] })
-    registerTransport({ fetch: { register(route: import('@deepseek-ai/dsh-client-connection').ConnectionFetchRoute) { routes.push(route); return async () => {} } } } as never, handler)
-    return { route: routes.find(item => item.path === `${RPC_CHANNEL}/${rpcMethod(RPC.workspaces)}`)!, routes, handler }
+    const peer = { kind: 'authenticated-operator' }
+    registerTransport({ operator: peer, fetch: { register(route: import('@deepseek-ai/dsh-client-connection').ConnectionFetchRoute) { routes.push(route); return async () => {} } } } as never, handler)
+    return { route: routes.find(item => item.path === `${RPC_CHANNEL}/${rpcMethod(RPC.workspaces)}`)!, routes, handler, peer }
   }
   const request = (body: string, type = 'application/json') => new Request(`http://localhost${RPC_CHANNEL}/${rpcMethod(RPC.workspaces)}`, {
     method: 'POST', headers: { 'content-type': type }, body,
   })
 
   it('registers disjoint exact endpoints and preserves the client correlation id', async () => {
-    const { route, routes, handler } = await mounted()
+    const { route, routes, handler, peer } = await mounted()
     expect(new Set(routes.map(item => item.path)).size).toBe(Object.values(RPC).length)
     expect(routes.every(item => item.methods.length === 1 && item.methods[0] === 'POST' && item.requestBody === 'buffered')).toBe(true)
     const response = await route.fetch(request(JSON.stringify({ type: 'client-request', rpcId: 'test-id', method: 'git-workspace/workspaces', payload: {} })))
     expect(await response.json()).toEqual({ type: 'server-response', rpcId: 'test-id', result: { ok: true, value: ['workspace'] } })
-    expect(handler).toHaveBeenCalledWith('workspaces', {}, expect.any(AbortSignal))
+    expect(handler).toHaveBeenCalledWith('workspaces', {}, expect.any(AbortSignal), peer)
   })
 
   it.each([
