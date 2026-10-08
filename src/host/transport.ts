@@ -4,8 +4,8 @@ import { RPC, RPC_CHANNEL, rpcMethod } from '../shared/protocol.ts'
 
 /**
  * Exact routes participate in Connection's authenticated /api carrier without
- * intercepting its gateway. Avoid rpc.handle(): in DSH 0.1.5-rc.1 it reads
- * webServer through the Connection provider's shadow context during registration.
+ * intercepting its gateway. DSH authenticates exact Fetch routes before
+ * dispatch and exposes the admitted operator Peer through connection.operator.
  */
 export function registerTransport(connection: HostConnectionHandle, handler: ConnectionRpcHandler): void {
   for (const endpoint of Object.values(RPC)) {
@@ -22,7 +22,7 @@ export function registerTransport(connection: HostConnectionHandle, handler: Con
         if (!envelope.success) return new Response('Invalid RPC envelope', { status: 400 })
         const message = envelope.data
         if (message.method !== rpcMethod(endpoint)) return new Response('RPC method does not match endpoint', { status: 400 })
-        const result = await handler(endpoint, message.payload, request.signal)
+        const result = await handler(endpoint, message.payload, request.signal, connection.operator)
         return Response.json({ type: 'server-response', rpcId: message.rpcId, result })
       },
     })

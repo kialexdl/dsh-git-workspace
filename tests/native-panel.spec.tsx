@@ -13,11 +13,11 @@ it('registers native slots, opens with no sessions, and returns through DSH layo
   const disposeRoot = slots.register({ name: 'root', children: {
     main: { kind: 'keyed', scope: 'root' },
     'sidebar.panellist': { kind: 'list', scope: 'root' },
-    'settings.plugin.item': { kind: 'keyed', scope: 'root' },
-  } }, ({ renderSlot }: PropsRenderSlots<'main' | 'sidebar.panellist' | 'settings.plugin.item'>) => <>
+    'plugins.bundle.config': { kind: 'keyed', scope: 'root' },
+  } }, ({ renderSlot }: PropsRenderSlots<'main' | 'sidebar.panellist' | 'plugins.bundle.config'>) => <>
     {renderSlot('main', {}, { entryKey: PANEL_ID })}
     {renderSlot('sidebar.panellist', { size: 18, active: false })}
-    {renderSlot('settings.plugin.item', {}, { entryKey: PANEL_ID })}
+    {renderSlot('plugins.bundle.config', { view: 'page' }, { entryKey: PANEL_ID })}
   </>)
   const disposers: Array<() => void> = []
   const close = vi.fn()
@@ -26,17 +26,34 @@ it('registers native slots, opens with no sessions, and returns through DSH layo
     get: () => ({ rpc: { call } }),
     slots: {
       register: slots.register.bind(slots),
-      inject: (_key: string, register: () => () => void) => { disposers.push(register()) },
+      inject: (_key: string, register: () => () => void) => {
+        // The slot registry owns its lifetime; expose a disposer to the
+        // nested configForms.whileServed() registration as in the real DSH API.
+        disposers.push(register())
+        return () => {}
+      },
     },
     effect: (effect: () => () => void) => { disposers.push(effect()) },
-    settingsScope: { bind: () => ({}) },
+    configForms: {
+      get: () => ({
+        getSnapshot: () => ({
+          status: 'ready', value: { proxyHosts: [], directHosts: [], blockHosts: [], defaultAction: 'inherit' },
+          base: {}, user: {}, revision: 0, writable: true, mode: 'host',
+        }),
+        subscribe: () => () => {},
+        mutate: vi.fn().mockResolvedValue(true),
+        unset: vi.fn().mockResolvedValue(true),
+      }),
+      whileServed: (_namespaces: string[], register: (served: ReadonlySet<string>) => () => void) =>
+        register(new Set(['git-workspace'])),
+    },
     layout: { selectPanel: close },
   } as unknown as Context
   apply(context)
   const main = slots.entries('main')[0]!
   expect(main.options.key).toBe(PANEL_ID)
   expect(slots.entries('sidebar.panellist')[0]?.options).toMatchObject({ id: PANEL_ID, label: 'Git 工作台' })
-  expect(slots.entries('settings.plugin.item')[0]?.options.key).toBe(PANEL_ID)
+  expect(slots.entries('plugins.bundle.config')[0]?.options.key).toBe(PANEL_ID)
   const props = main.inject!()
   const container = document.createElement('div')
   document.body.append(container)

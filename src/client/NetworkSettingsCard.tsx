@@ -1,4 +1,5 @@
-import type { SettingsScope } from '@deepseek-ai/dsh-client-ui-settings/client'
+import type { ConfigForm } from '@deepseek-ai/dsh-client-ui-settings/client'
+import type { PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import type { NetworkSettings } from '../shared/protocol.ts'
 
@@ -11,12 +12,12 @@ function joined(value: string[] | undefined): string {
 }
 
 export class NetworkSettingsController {
-  constructor(readonly scope: SettingsScope<NetworkSettings>) {}
+  constructor(readonly scope: ConfigForm<NetworkSettings>) {}
   subscribe = (listener: () => void): (() => void) => this.scope.subscribe(listener)
   getSnapshot = () => this.scope.getSnapshot()
 }
 
-export function NetworkSettingsCard({ controller }: { controller: NetworkSettingsController }) {
+export function NetworkSettingsCard({ controller }: PropsRuntime<'plugins.bundle.config'> & { controller: NetworkSettingsController }) {
   const snapshot = useSyncExternalStore(controller.subscribe, controller.getSnapshot)
   const value = snapshot.value ?? {}
   const [proxyUrl, setProxyUrl] = useState('')
@@ -44,7 +45,7 @@ export function NetworkSettingsCard({ controller }: { controller: NetworkSetting
 
   if (snapshot.status === 'loading') return null
   if (snapshot.status !== 'ready') {
-    return <li className="dgw-settings-card"><strong>Git 工作台网络</strong><p>当前 DSH 未向设置页面暴露该插件的 settings namespace。</p></li>
+    return <section className="dgw-settings-card"><strong>Git 工作台网络</strong><p>当前 DSH 未提供此配置条目的可编辑表单。请检查是否为本地 Web 页面及插件配置是否启用。</p></section>
   }
 
   const edit = (setter: (next: string) => void) => (next: string): void => {
@@ -63,26 +64,42 @@ export function NetworkSettingsCard({ controller }: { controller: NetworkSetting
       { op: 'set', path: ['defaultAction'], value: defaultAction },
     ]
     if (proxyUrl.trim() !== '') ops.push({ op: 'set', path: ['proxyUrl'], value: proxyUrl.trim() })
-    for (const op of ops) {
-      if (op.op === 'set') await controller.scope.set(op.path[0]!, op.value)
-      else await controller.scope.unset(op.path[0]!)
+    try {
+      const accepted = await controller.scope.mutate(ops, snapshot.revision)
+      if (!accepted) {
+        setNotice('保存被拒绝或配置已被其他操作更新，请检查最新值后重试。')
+        return
+      }
+    } catch (error) {
+      setNotice(`保存失败：${String(error)}`)
+      return
+    } finally {
+      setSaving(false)
     }
     setProxyUrl('')
     setDirty(false)
-    setSaving(false)
     setNotice('已保存。代理地址是只写字段，保存后不会回显。')
   }
   const clearProxy = async (): Promise<void> => {
     if (!snapshot.writable || !window.confirm('确认清除 Git 工作台保存的代理地址？')) return
     setSaving(true)
-    await controller.scope.unset('proxyUrl')
-    setProxyUrl('')
-    setSaving(false)
-    setNotice('代理地址已清除。')
+    try {
+      const accepted = await controller.scope.unset('proxyUrl')
+      if (!accepted) {
+        setNotice('清除代理地址被拒绝，请检查配置权限或重试。')
+        return
+      }
+      setProxyUrl('')
+      setNotice('代理地址已清除。')
+    } catch (error) {
+      setNotice(`清除失败：${String(error)}`)
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
-    <li className="dgw-settings-card">
+    <section className="dgw-settings-card">
       <details>
         <summary><span><strong>Git 工作台网络</strong><small>按 Remote 实际主机决定代理、直连或阻止</small></span><span>{dirty ? '未保存' : ''}</span></summary>
         <div className="dgw-settings-body">
@@ -128,6 +145,6 @@ export function NetworkSettingsCard({ controller }: { controller: NetworkSetting
           </div>
         </div>
       </details>
-    </li>
+    </section>
   )
 }

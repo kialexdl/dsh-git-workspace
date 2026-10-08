@@ -9,16 +9,20 @@ describe('published DSH browser Connection → plugin Host transport', () => {
   async function setup() {
     const routes = new Map<string, ConnectionFetchRoute>()
     const dispatch = vi.fn(async (endpoint: string, payload: unknown) => ({ ok: true as const, value: { endpoint, payload } }))
-    registerTransport({ fetch: { register(route: ConnectionFetchRoute) {
+    const peer = { kind: 'authenticated-operator' }
+    registerTransport({ operator: peer, fetch: { register(route: ConnectionFetchRoute) {
       routes.set(route.path, route)
       return async () => { routes.delete(route.path) }
     } } } as never, dispatch)
-    const fetch = vi.fn(async (url: URL, init: RequestInit) => {
+    // DSH 0.2.1 passes a document-relative string such as
+    // "api/git-workspace/workspaces", not necessarily a URL instance.
+    const fetch = vi.fn(async (input: string | URL, init: RequestInit) => {
+      const url = new URL(String(input), 'http://localhost/')
       const route = routes.get(url.pathname)
       if (!route) return new Response('Not found', { status: 404 })
       return route.fetch(new Request(url, init))
     })
-    return { connection: await realConnection(fetch), dispatch, fetch }
+    return { connection: await realConnection(fetch), dispatch, fetch, peer }
   }
 
   it('reproduces the 0.2.0 multi-segment channel error before network I/O', async () => {
@@ -29,13 +33,13 @@ describe('published DSH browser Connection → plugin Host transport', () => {
   })
 
   it('loads workspaces and nested commit diffs through the real client validator', async () => {
-    const { connection, dispatch } = await setup()
+    const { connection, dispatch, peer } = await setup()
     const api = new GitWorkspaceApi(connection)
     await expect(api.workspaces()).resolves.toEqual({ endpoint: 'workspaces', payload: {} })
     await api.commitDiff('ws', 'repo', 'a'.repeat(40), 'src/main.ts')
     expect(dispatch).toHaveBeenLastCalledWith('commit/diff', {
       workspaceId: 'ws', repoId: 'repo', hash: 'a'.repeat(40), path: 'src/main.ts',
-    }, expect.any(AbortSignal))
+    }, expect.any(AbortSignal), peer)
   })
 
   it.each(Object.values(RPC))('round-trips the %s endpoint without rewriting its dispatch identity', async endpoint => {

@@ -1,9 +1,41 @@
 import { describe, expect, it, vi } from 'vitest'
 import { GitWorkspaceApi } from '../src/client/api.ts'
-import { dispatch } from '../src/index.ts'
+import { Config, configValue, dispatch } from '../src/index.ts'
 import { RPC, RPC_CHANNEL, rpcMethod } from '../src/shared/protocol.ts'
 
 describe('Host/Client transport contract', () => {
+  it('resolves the exported DSH 0.2.1 volatile schema into a usable default runtime config', () => {
+    const resolved = Config({}) as import('../src/index.ts').Config
+    expect(resolved.enabled.get()).toBe(true)
+    expect(resolved.proxyUrl.get()).toBeUndefined()
+    expect(configValue(resolved)).toMatchObject({
+      enabled: true, scanDepth: 4, ignoredDirectories: [],
+      proxyHosts: [], directHosts: [], blockHosts: [], defaultAction: 'inherit',
+    })
+  })
+
+  it('detaches readonly volatile arrays from plugin configuration snapshots', () => {
+    const hosts = Object.freeze(['github.com'])
+    const ignored = Object.freeze(['node_modules'])
+    const wrap = (value: unknown) => ({ get: () => value })
+    const state = configValue({
+      enabled: wrap(true),
+      scanDepth: wrap(4),
+      ignoredDirectories: wrap(ignored),
+      proxyUrl: wrap(undefined),
+      proxyHosts: wrap(hosts),
+      directHosts: wrap(Object.freeze(['git.local'])),
+      blockHosts: wrap(Object.freeze(['blocked.local'])),
+      defaultAction: wrap('inherit'),
+    } as never)
+    expect(state.proxyHosts).toEqual(['github.com'])
+    expect(state.ignoredDirectories).toEqual(['node_modules'])
+    state.proxyHosts.push('second.example')
+    state.ignoredDirectories.push('dist')
+    expect(hosts).toEqual(['github.com'])
+    expect(ignored).toEqual(['node_modules'])
+  })
+
   it('calls the plugin-owned channel and unwraps a successful response', async () => {
     const call = vi.fn().mockResolvedValue({ ok: true, value: [{ workspaceId: 'ws-1' }] })
     const api = new GitWorkspaceApi({ rpc: { call } } as never)
@@ -57,25 +89,26 @@ describe('Host/Client transport contract', () => {
 
 // Exercise the real request parser against exact-route handlers, including the
 // URL/body method agreement that prevents an allowed route dispatching another action.
-describe('DSH 0.1.5 exact Fetch transport', () => {
+describe('DSH 0.2.1 exact Fetch transport', () => {
   async function mounted() {
     const { registerTransport } = await import('../src/host/transport.ts')
     const routes: import('@deepseek-ai/dsh-client-connection').ConnectionFetchRoute[] = []
     const handler = vi.fn().mockResolvedValue({ ok: true, value: ['workspace'] })
-    registerTransport({ fetch: { register(route: import('@deepseek-ai/dsh-client-connection').ConnectionFetchRoute) { routes.push(route); return async () => {} } } } as never, handler)
-    return { route: routes.find(item => item.path === `${RPC_CHANNEL}/${rpcMethod(RPC.workspaces)}`)!, routes, handler }
+    const peer = { kind: 'authenticated-operator' }
+    registerTransport({ operator: peer, fetch: { register(route: import('@deepseek-ai/dsh-client-connection').ConnectionFetchRoute) { routes.push(route); return async () => {} } } } as never, handler)
+    return { route: routes.find(item => item.path === `${RPC_CHANNEL}/${rpcMethod(RPC.workspaces)}`)!, routes, handler, peer }
   }
   const request = (body: string, type = 'application/json') => new Request(`http://localhost${RPC_CHANNEL}/${rpcMethod(RPC.workspaces)}`, {
     method: 'POST', headers: { 'content-type': type }, body,
   })
 
   it('registers disjoint exact endpoints and preserves the client correlation id', async () => {
-    const { route, routes, handler } = await mounted()
+    const { route, routes, handler, peer } = await mounted()
     expect(new Set(routes.map(item => item.path)).size).toBe(Object.values(RPC).length)
     expect(routes.every(item => item.methods.length === 1 && item.methods[0] === 'POST' && item.requestBody === 'buffered')).toBe(true)
     const response = await route.fetch(request(JSON.stringify({ type: 'client-request', rpcId: 'test-id', method: 'git-workspace/workspaces', payload: {} })))
     expect(await response.json()).toEqual({ type: 'server-response', rpcId: 'test-id', result: { ok: true, value: ['workspace'] } })
-    expect(handler).toHaveBeenCalledWith('workspaces', {}, expect.any(AbortSignal))
+    expect(handler).toHaveBeenCalledWith('workspaces', {}, expect.any(AbortSignal), peer)
   })
 
   it.each([
