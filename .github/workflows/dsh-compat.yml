@@ -1,0 +1,42 @@
+name: DSH 0.2.1 compatibility
+
+on:
+  push:
+    branches:
+      - "compat/**"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Typecheck, test, and build
+    runs-on: windows-latest
+    steps:
+      - name: Checkout full source
+        uses: actions/checkout@v4
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.19.0"
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+      - name: Verify volatile configuration API
+        shell: pwsh
+        run: node -e "import('@deepseek-ai/schemastery').then(({default:z}) => { if(typeof z.boolean().default(true).volatile !== 'function') process.exit(1) })"
+      - name: Typecheck and tests
+        run: pnpm check
+      - name: Archive source without dependencies
+        run: pnpm pack:source
+      - name: Publish source ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: dsh-git-workspace-source
+          path: dsh-git-workspace-*-source.zip
+          if-no-files-found: error
