@@ -194,7 +194,8 @@ describe('Pull preserves local changes', () => {
     const result = await target.pull('ws-1', repo.repoId)
     expect(result.summary.behind).toBe(0)
     expect(await readFile(join(local, path), 'utf8')).toBe('local work\n')
-    expect(await readFile(join(local, 'remote.txt'), 'utf8')).toBe('remote work\n')
+    // Git may check out committed LF contents as CRLF on Windows.
+    expect(await readFile(join(local, 'remote.txt'), 'utf8')).toMatch(/^remote work\r?\n$/)
     expect(git(local, 'status', '--porcelain')).toBe(before)
     expect(git(local, 'stash', 'list')).toBe('')
   })
