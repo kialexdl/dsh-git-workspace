@@ -2,6 +2,23 @@
 
 > DSH 0.2.1-alpha.1 兼容性适配分支（插件源码版本 0.3.0）。升级前必须核对旧设置数据；详情见 [0.2.1 迁移说明](docs/DSH-0.2.1-ADAPTATION.md)。
 
+## DSH 0.2.1 启动依赖修复
+
+DSH 0.2.1 的 `Config` 字段使用 `.volatile()`，必须搭配支持该接口的 `@deepseek-ai/schemastery`。插件将此直接依赖固定为 `3.18.5-alpha.1`，与官方 DSH 0.2.1-alpha.1 源码保持一致。此前仓库中的 `pnpm-lock.yaml` 仍锁定旧版 `3.18.2` 和 DSH 0.1.5 的依赖，已从适配分支移除；本地执行安装命令会重新生成与新版依赖一致的锁文件。
+
+已有源码目录升级时，建议执行：
+
+```powershell
+git fetch origin
+git switch compat/dsh-0.2.1-alpha.1
+git pull --ff-only origin compat/dsh-0.2.1-alpha.1
+pnpm install --no-frozen-lockfile
+node -e "import('@deepseek-ai/schemastery').then(({default:z}) => console.log('volatile:', typeof z.boolean().default(true).volatile))"
+pnpm check
+```
+
+预期输出包含 `volatile: function`。如果不是，检查当前目录是否正确、依赖版本是否已更新。构建流程本身也包含运行时 API 自检，可以在 DSH 启动前阻止旧依赖进入构建产物。
+
 ## 当前兼容基线
 
 - 宿主版本：DSH `>=0.2.1-alpha.1 <0.3.0`（静态接口基线：`5badb15`）。
