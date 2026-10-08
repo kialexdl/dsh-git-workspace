@@ -1,9 +1,31 @@
 import { describe, expect, it, vi } from 'vitest'
 import { GitWorkspaceApi } from '../src/client/api.ts'
-import { dispatch } from '../src/index.ts'
+import { configValue, dispatch } from '../src/index.ts'
 import { RPC, RPC_CHANNEL, rpcMethod } from '../src/shared/protocol.ts'
 
 describe('Host/Client transport contract', () => {
+  it('detaches readonly volatile arrays from plugin configuration snapshots', () => {
+    const hosts = Object.freeze(['github.com'])
+    const ignored = Object.freeze(['node_modules'])
+    const wrap = (value: unknown) => ({ get: () => value })
+    const state = configValue({
+      enabled: wrap(true),
+      scanDepth: wrap(4),
+      ignoredDirectories: wrap(ignored),
+      proxyUrl: wrap(undefined),
+      proxyHosts: wrap(hosts),
+      directHosts: wrap(Object.freeze(['git.local'])),
+      blockHosts: wrap(Object.freeze(['blocked.local'])),
+      defaultAction: wrap('inherit'),
+    } as never)
+    expect(state.proxyHosts).toEqual(['github.com'])
+    expect(state.ignoredDirectories).toEqual(['node_modules'])
+    state.proxyHosts.push('second.example')
+    state.ignoredDirectories.push('dist')
+    expect(hosts).toEqual(['github.com'])
+    expect(ignored).toEqual(['node_modules'])
+  })
+
   it('calls the plugin-owned channel and unwraps a successful response', async () => {
     const call = vi.fn().mockResolvedValue({ ok: true, value: [{ workspaceId: 'ws-1' }] })
     const api = new GitWorkspaceApi({ rpc: { call } } as never)
