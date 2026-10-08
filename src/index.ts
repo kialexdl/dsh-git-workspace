@@ -1,6 +1,5 @@
-import type { Context } from '@deepseek-ai/cordis'
+import type { Context, Volatile } from '@deepseek-ai/cordis'
 import type { ConnectionRpcResult } from '@deepseek-ai/dsh-client-connection'
-import type {} from '@deepseek-ai/dsh-settings'
 import type {} from '@deepseek-ai/dsh-workspace'
 import z from '@deepseek-ai/schemastery'
 import { registerTransport } from './host/transport.ts'
@@ -9,24 +8,30 @@ import { RepositoryService } from './host/repository-service.ts'
 import { RPC, type NetworkSettings } from './shared/protocol.ts'
 
 export const name = 'git-workspace'
-export const inject = ['connection', 'workspaceRegistry', 'settings']
+export const inject = ['connection', 'workspaceRegistry']
 export const SETTINGS_NAMESPACE = 'dsh-git-workspace'
 
-export interface Config extends NetworkSettings {
-  enabled?: boolean
-  scanDepth?: number
-  ignoredDirectories?: string[]
+/** DSH 0.2.1 exposes editable fields through volatile plugin Config references. */
+export interface Config {
+  enabled: Volatile<boolean>
+  scanDepth: Volatile<number>
+  ignoredDirectories: Volatile<string[]>
+  proxyUrl: Volatile<string | undefined>
+  proxyHosts: Volatile<string[]>
+  directHosts: Volatile<string[]>
+  blockHosts: Volatile<string[]>
+  defaultAction: Volatile<NonNullable<NetworkSettings['defaultAction']>>
 }
 
 export const Config: z<Config> = z.object({
-  enabled: z.boolean().default(true),
-  scanDepth: z.number().min(0).max(12).default(4),
-  ignoredDirectories: z.array(z.string()).default([]),
-  proxyUrl: z.string().role('secret'),
-  proxyHosts: z.array(z.string()).default([]),
-  directHosts: z.array(z.string()).default([]),
-  blockHosts: z.array(z.string()).default([]),
-  defaultAction: z.union(['inherit', 'direct', 'block'] as const).default('inherit'),
+  enabled: z.boolean().default(true).volatile(),
+  scanDepth: z.number().min(0).max(12).default(4).volatile(),
+  ignoredDirectories: z.array(z.string()).default([]).volatile(),
+  proxyUrl: z.string().role('secret').volatile(),
+  proxyHosts: z.array(z.string()).default([]).volatile(),
+  directHosts: z.array(z.string()).default([]).volatile(),
+  blockHosts: z.array(z.string()).default([]).volatile(),
+  defaultAction: z.union(['inherit', 'direct', 'block'] as const).default('inherit').volatile(),
 })
 
 function stringField(payload: unknown, name: string): string {
@@ -63,33 +68,41 @@ function optionalBoolean(payload: unknown, name: string, fallback: boolean): boo
   return value
 }
 
-function configValue(config: Config | undefined): Required<Pick<Config, 'enabled' | 'scanDepth' | 'ignoredDirectories' | 'proxyHosts' | 'directHosts' | 'blockHosts' | 'defaultAction'>> & Config {
+/**
+ * Read one consistent configuration snapshot per operation. The browser edits
+ * volatile references; the service never caches their initial values.
+ */
+export function configValue(config: Config): Required<Pick<NetworkSettings, 'proxyHosts' | 'directHosts' | 'blockHosts' | 'defaultAction'>> & NetworkSettings & {
+  enabled: boolean
+  scanDepth: number
+  ignoredDirectories: string[]
+} {
   return {
-    enabled: config?.enabled ?? true,
-    scanDepth: config?.scanDepth ?? 4,
-    ignoredDirectories: config?.ignoredDirectories ?? [],
-    proxyHosts: config?.proxyHosts ?? [],
-    directHosts: config?.directHosts ?? [],
-    blockHosts: config?.blockHosts ?? [],
-    defaultAction: config?.defaultAction ?? 'inherit',
-    ...(config?.proxyUrl === undefined ? {} : { proxyUrl: config.proxyUrl }),
+    enabled: config.enabled.get(),
+    scanDepth: config.scanDepth.get(),
+    ignoredDirectories: config.ignoredDirectories.get(),
+    proxyUrl: config.proxyUrl.get(),
+    proxyHosts: config.proxyHosts.get(),
+    directHosts: config.directHosts.get(),
+    blockHosts: config.blockHosts.get(),
+    defaultAction: config.defaultAction.get(),
   }
 }
 
-export function apply(ctx: Context, entryConfig?: Config): void {
-  const entry = configValue(entryConfig)
-  const scope = ctx.settings.register(SETTINGS_NAMESPACE, Config, { base: entry, applies: 'live' })
-  const source = (): Config => scope.get()
+export function apply(ctx: Context, entryConfig: Config): void {
+  // The DSH Settings 0.2.x service no longer has settings.register().
+  // The Loader now owns the effective Config and resolves volatile values.
+  const source = () => configValue(entryConfig)
   const service = new RepositoryService(ctx.workspaceRegistry, {
-    scanDepth: () => configValue(source()).scanDepth,
-    ignoredDirectories: () => configValue(source()).ignoredDirectories,
-    networkSettings: () => configValue(source()),
+    scanDepth: () => source().scanDepth,
+    ignoredDirectories: () => source().ignoredDirectories,
+    networkSettings: source,
   })
   registerTransport(
     ctx.connection,
     async (endpoint, payload, signal): Promise<ConnectionRpcResult<unknown>> => {
       try {
-        if (!configValue(source()).enabled) throw new GitWorkspaceError('DISABLED', 'Git 工作台已在 DSH Settings 中停用。')
+        if (!source().enabled) throw new GitWorkspaceError('DISABLED', 'Git 工作台已在 DSH 插件配置中停用。')
         const value = await dispatch(service, endpoint, payload, signal)
         return { ok: true, value }
       } catch (error) {
