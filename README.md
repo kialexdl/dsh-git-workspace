@@ -1,10 +1,20 @@
 # dsh-git-workspace
 
+> DSH 0.2.1-alpha.1 兼容性适配分支（插件源码版本 0.3.0）。升级前必须核对旧设置数据；详情见 [0.2.1 迁移说明](docs/DSH-0.2.1-ADAPTATION.md)。
+
+## 当前兼容基线
+
+- 宿主版本：DSH `>=0.2.1-alpha.1 <0.3.0`（静态接口基线：`5badb15`）。
+- 网络设置入口：插件管理 → `dsh-git-workspace` 详情页；新版设置编辑绑定 `git-workspace` profile 条目。
+- 旧版 `ctx.settings.register` / `settings.plugin.item` 已移除；网络设置使用 `volatile` 配置与 `plugins.bundle.config`。
+- 本分支尚未完成实际 DSH 宿主集成测试，不能视为已验收的稳定发布。
+
+
 面向 DeepSeek Harness（DSH）Web UI 的单 workspace 多 Git 仓库工作台。
 
 一个 DSH workspace 下可以同时发现和维护多个彼此独立的 Git 仓库，并在同一界面完成状态查看、暂存、提交、历史查看、分支与 Remote 维护、Fetch、Pull、Push 和批量网络操作。Remote 可按实际目标主机选择代理、直连、继承 Host 环境或阻止访问。
 
-## 0.2.1 修复
+## 历史版本 0.2.1 修复
 
 修复 0.2.0 打开工作台时报 `connection: invalid RPC target`。RPC 使用 `/api` channel + `git-workspace/<endpoint>` method；请同时更新 Host 与 Client，重启 DSH 后按 Ctrl+F5 刷新浏览器。原本同目录 link 安装无需重新注册。
 
@@ -27,14 +37,14 @@
 - Fetch URL 与 Push URL 分别决策；代理失败不会静默回退直连。
 - Windows、macOS 和 Linux 的 Node.js 原生子进程调用，不经 shell 拼接用户输入。
 
-## 环境要求
+## 旧版环境要求（历史记录，当前请参照上方兼容基线）
 
 - DSH `0.1.5-rc.1`（本次验证版本，2026-09-10，commit `183f08e9c6dde7e36cd2318eaee70b0da08fb35e`）；最低接口要求 `>=0.1.5-rc.1 <0.2.0`。旧 DSH 请继续使用插件 0.1.4。
 - Node.js `^22.19.0` 或 `>= 24`
 - pnpm（仓库声明 `pnpm@11.21.0`）
 - Git CLI；建议 Git `>= 2.31`，代理注入依赖 `git --config-env`
 
-## 升级到 0.2.1
+## 历史版本升级到 0.2.1
 
 本版本迁移到 DSH 新插件接口，不兼容 0.1.1 系列宿主。先升级 DSH 至 `0.1.5-rc.1`，然后停止 DSH、将 0.2.1 源码覆盖到原插件目录并执行：
 
