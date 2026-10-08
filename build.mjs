@@ -1,5 +1,13 @@
 import { build } from 'esbuild'
 import { mkdir, writeFile } from 'node:fs/promises'
+import schema from '@deepseek-ai/schemastery'
+
+// Validate the runtime dependency itself, not only TypeScript's declarations.
+// DSH 0.2.1 uses volatile Config fields; older Schemastery releases compile
+// against transitive declarations but crash when the Host imports this bundle.
+if (typeof schema.boolean().default(true).volatile !== 'function') {
+  throw new Error('dsh-git-workspace requires @deepseek-ai/schemastery >=3.18.4 with .volatile(). Run pnpm install --no-frozen-lockfile and rebuild.')
+}
 
 const PACKAGE_ID = 'dsh-git-workspace'
 const common = {
