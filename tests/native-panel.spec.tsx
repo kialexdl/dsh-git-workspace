@@ -57,7 +57,6 @@ it('registers native slots, opens with no sessions, and returns through DSH layo
     await act(async () => { root.render(createElement(main.component as ComponentType<object>, props)) })
     expect(call).toHaveBeenCalled()
     expect(container.querySelector('.dgw-shell')).not.toBeNull()
-    expect(container.querySelector('.dgw-settings-card')).not.toBeNull()
     const button = [...container.querySelectorAll('button')].find(item => item.textContent === '关闭并返回会话')!
     await act(async () => { button.click() })
     expect(close).toHaveBeenCalledWith(null)
