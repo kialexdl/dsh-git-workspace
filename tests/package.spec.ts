@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises'
 import z from '@deepseek-ai/schemastery'
+import { satisfies } from 'semver'
 import { describe, expect, it } from 'vitest'
 
 async function text(path: string): Promise<string> {
@@ -69,7 +70,8 @@ describe('distributable plugin package', () => {
     const host = await text('src/index.ts')
     const client = await text('src/client/index.tsx')
     const card = await text('src/client/NetworkSettingsCard.tsx')
-    expect(pkg.dsh.engines.dsh).toContain('0.2.1-alpha.1')
+    expect(pkg.engines.dsh).toBe('>=0.2.0-rc.2 <0.3.0-0')
+    expect(pkg.dsh.engines).toBeUndefined()
     expect(pkg.peerDependencies['@deepseek-ai/dsh-client-ui-plugin-manager']).toBeDefined()
     expect(host).not.toContain('const scope = ctx.settings.register(')
     expect(host).toContain('.volatile()')
@@ -80,6 +82,34 @@ describe('distributable plugin package', () => {
     expect(client).toContain("'plugins.bundle.config'")
     expect(client).not.toContain("'settings.plugin.item'")
     expect(card).toContain('controller.scope.mutate(ops, snapshot.revision)')
+  })
+
+  it.each([
+    ['0.1.7-rc.2', false],
+    ['0.2.0-rc.1', false],
+    ['0.2.0-rc.2', true],
+    ['0.2.0', true],
+    ['0.2.1-alpha.1', true],
+    ['0.2.2-alpha.1', true],
+    ['0.3.0-alpha.1', false],
+    ['0.3.0', false],
+  ])('checks every DSH peer on runtime %s (compatible: %s)', async (runtime, expected) => {
+    const pkg = JSON.parse(await text('package.json')) as Record<string, any>
+    const peers = Object.entries(pkg.peerDependencies).filter(([name]) => name.startsWith('@deepseek-ai/dsh-'))
+    expect(peers.length).toBeGreaterThan(0)
+    // DSH checks each peer against its runtime version with prereleases enabled.
+    for (const [name, range] of peers) {
+      expect(satisfies(runtime, range as string, { includePrerelease: true }), name).toBe(expected)
+    }
+    expect(satisfies(runtime, pkg.engines.dsh, { includePrerelease: true })).toBe(expected)
+  })
+
+  it('accepts the Cordis shipped by the minimum and development DSH versions', async () => {
+    const pkg = JSON.parse(await text('package.json')) as Record<string, any>
+    for (const version of ['4.0.4', '4.0.5-alpha.1']) {
+      expect(satisfies(version, pkg.peerDependencies['@deepseek-ai/cordis'], { includePrerelease: true })).toBe(true)
+    }
+    expect(pkg.devDependencies['@deepseek-ai/dsh-client-connection']).toBe('0.2.1-alpha.1')
   })
 
   it('keeps Remotes hints out of the compact URL grid', async () => {

@@ -58,3 +58,17 @@ pnpm check
 - DSH `packages/client/ui-plugin-manager/src/client/slot-contract.ts`
 - DSH `packages/client/ui-layout/src/client/theme-presenter.ts`
 - DSH `packages/workspace/workspace/src/index.ts`
+
+## 0.3.1 兼容范围扩展
+
+最低运行版本调整为 `0.2.0-rc.2`，完整范围为 `>=0.2.0-rc.2 <0.3.0-0`。对照官方标签 `dsh-v0.2.0-rc.2`（`639ed015397290b3745d163aafe02ffee4aa3f84`），插件使用的通信接口、请求格式、配置表单与工作区注册表关键实现均与 0.2.1-alpha.1 一致。Cordis 4.0.4 与 4.0.5-alpha.1、Schemastery 3.18.4 与 3.18.5-alpha.1 的核心源码没有变化。
+
+所有 DSH peer 声明统一更新；总体声明使用顶层 `engines.dsh`。DSH 的运行时兼容校验依据每个 DSH peer，并启用预发布范围匹配，因此上限使用 `<0.3.0-0`，防止放行 0.3.0-alpha 等版本。开发依赖及 Schemastery 直接依赖不随宿主范围放宽。
+
+此前 0.3.0 在 DSH 0.2.1-alpha.1 已由用户验证正常生效；0.2.0-rc.2 的完整宿主验收仍待执行。版本范围回归测试不替代宿主验收。
+
+本次验证结果：
+
+- 默认 0.2.1-alpha.1 开发依赖：`pnpm check` 通过，9 个测试文件、83 项测试全部通过；构建后的宿主导入与浏览器模块注册检查通过。
+- 隔离目录将全部 DSH 开发依赖替换为 0.2.0-rc.2，Cordis 替换为 4.0.4：类型检查、构建、真实通信/传输/原生面板 37 项测试，以及构建产物检查全部通过。发布包的开发依赖仍保留 0.2.1-alpha.1。
+- 上述验证没有启动完整 0.2.0-rc.2 宿主与浏览器，配置持久化、主题和完整 Git 操作仍按验收清单核对。

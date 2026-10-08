@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.1 — 2026-10-08
+
+- DSH 兼容范围统一放宽至 `>=0.2.0-rc.2 <0.3.0-0`，保留对 0.2.1-alpha.1 的支持，明确排除 0.3.0 预发布版。
+- Cordis 宿主依赖下限放宽至 4.0.4；开发依赖及 Schemastery 3.18.5-alpha.1 固定版本不变。
+- 宿主版本声明移至官方定义的顶层 `engines.dsh`；所有 DSH peer 声明同步更新。
+- 新增全部 DSH peer 的版本边界回归检查；0.2.0-rc.2 的完整宿主验收仍待执行。
+
 ## 0.2.1 — 2026-09-11
 
 - 修复打开工作台时报 `connection: invalid RPC target`：DSH channel 仅允许一级路径，改用 `/api` channel 和 `git-workspace/<endpoint>` method。
