@@ -14,7 +14,10 @@ describe('published DSH browser Connection → plugin Host transport', () => {
       routes.set(route.path, route)
       return async () => { routes.delete(route.path) }
     } } } as never, dispatch)
-    const fetch = vi.fn(async (url: URL, init: RequestInit) => {
+    // DSH 0.2.1 passes a document-relative string such as
+    // "api/git-workspace/workspaces", not necessarily a URL instance.
+    const fetch = vi.fn(async (input: string | URL, init: RequestInit) => {
+      const url = new URL(String(input), 'http://localhost/')
       const route = routes.get(url.pathname)
       if (!route) return new Response('Not found', { status: 404 })
       return route.fetch(new Request(url, init))
