@@ -1,4 +1,5 @@
 import type { ConfigForm } from '@deepseek-ai/dsh-client-ui-settings/client'
+import type { PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import type { NetworkSettings } from '../shared/protocol.ts'
 
@@ -16,7 +17,7 @@ export class NetworkSettingsController {
   getSnapshot = () => this.scope.getSnapshot()
 }
 
-export function NetworkSettingsCard({ controller }: { controller: NetworkSettingsController }) {
+export function NetworkSettingsCard({ controller }: PropsRuntime<'plugins.bundle.config'> & { controller: NetworkSettingsController }) {
   const snapshot = useSyncExternalStore(controller.subscribe, controller.getSnapshot)
   const value = snapshot.value ?? {}
   const [proxyUrl, setProxyUrl] = useState('')
